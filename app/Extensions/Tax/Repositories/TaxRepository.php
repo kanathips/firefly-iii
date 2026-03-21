@@ -89,19 +89,10 @@ class TaxRepository implements TaxRepositoryInterface
     /**
      * @return array<int, array{amount: string, category: string|null, date: string, description: string}>
      */
-    public function getDeductibleJournals(int $profileId, Carbon $start, Carbon $end): array
+    public function getDeductibleJournals(TaxProfile $profile, Carbon $start, Carbon $end): array
     {
-        // Resolve profile scoped to current user
-        $profile = TaxProfile::where('id', $profileId)
-            ->where('user_id', $this->user->id)
-            ->first();
-
-        if (null === $profile) {
-            return [];
-        }
-
         // Collect the tag IDs linked to this profile
-        $tagIds = TaxDeductibleTag::where('tax_profile_id', $profileId)
+        $tagIds = TaxDeductibleTag::where('tax_profile_id', $profile->id)
             ->pluck('tag_id')
             ->toArray();
 

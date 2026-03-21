@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace FireflyIII\Extensions\Providers;
 
-use FireflyIII\Extensions\Investment\Providers\InvestmentServiceProvider;
-use FireflyIII\Extensions\Notifications\Providers\NotificationServiceProvider;
 use FireflyIII\Extensions\Tax\Providers\TaxServiceProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,14 +12,11 @@ class ExtensionsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(base_path('database/migrations/extensions'));
-
         $this->loadRoutesFrom(base_path('routes/extensions-api.php'));
     }
 
     public function register(): void
     {
         $this->app->register(TaxServiceProvider::class);
-        $this->app->register(InvestmentServiceProvider::class);
-        $this->app->register(NotificationServiceProvider::class);
     }
 }

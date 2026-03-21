@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FireflyIII\Extensions\Tax\Services;
 
 use Carbon\Carbon;
+use FireflyIII\Extensions\Tax\Models\TaxProfile;
 use FireflyIII\Extensions\Tax\Repositories\TaxRepositoryInterface;
 use InvalidArgumentException;
 
@@ -28,26 +29,11 @@ class TaxCalculationService
      *
      * @return array{total: float, by_category: array<string, float>}
      */
-    public function computeDeductibleTotals(int $profileId, Carbon $start, Carbon $end): array
+    public function computeDeductibleTotals(TaxProfile $profile, Carbon $start, Carbon $end): array
     {
-        $journals   = $this->repository->getDeductibleJournals($profileId, $start, $end);
+        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
 
-        $total      = 0.0;
-        $byCategory = [];
-
-        foreach ($journals as $journal) {
-            $amount   = abs((float) $journal['amount']);
-            $category = $journal['category'] ?? null;
-            $key      = (null === $category || '' === $category) ? '(none)' : $category;
-
-            $total               += $amount;
-            $byCategory[$key]     = ($byCategory[$key] ?? 0.0) + $amount;
-        }
-
-        return [
-            'total'       => $total,
-            'by_category' => $byCategory,
-        ];
+        return $this->computeTotalsFromJournals($journals);
     }
 
     /**
@@ -137,11 +123,30 @@ class TaxCalculationService
      *   by_period: array<string, array{total: float, journals: array}>
      * }
      */
-    public function buildSummary(int $profileId, Carbon $start, Carbon $end, string $period): array
+    public function buildSummary(TaxProfile $profile, Carbon $start, Carbon $end, string $period): array
     {
-        $journals   = $this->repository->getDeductibleJournals($profileId, $start, $end);
+        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
+        $totals   = $this->computeTotalsFromJournals($journals);
+        $byPeriod = $this->groupByPeriod($journals, $period);
 
-        // Compute category totals directly from the pre-fetched journals array
+        return [
+            'profile_id'       => $profile->id,
+            'start'            => $start->format('Y-m-d'),
+            'end'              => $end->format('Y-m-d'),
+            'total_deductible' => $totals['total'],
+            'by_category'      => $totals['by_category'],
+            'by_period'        => $byPeriod,
+        ];
+    }
+
+    /**
+     * Compute category totals from a journal array (DRY helper).
+     *
+     * @param  array<int, array{amount: string, category: string|null, date: string, description: string}>  $journals
+     * @return array{total: float, by_category: array<string, float>}
+     */
+    private function computeTotalsFromJournals(array $journals): array
+    {
         $total      = 0.0;
         $byCategory = [];
 
@@ -154,15 +159,9 @@ class TaxCalculationService
             $byCategory[$key]     = ($byCategory[$key] ?? 0.0) + $amount;
         }
 
-        $byPeriod = $this->groupByPeriod($journals, $period);
-
         return [
-            'profile_id'       => $profileId,
-            'start'            => $start->format('Y-m-d'),
-            'end'              => $end->format('Y-m-d'),
-            'total_deductible' => $total,
-            'by_category'      => $byCategory,
-            'by_period'        => $byPeriod,
+            'total'       => $total,
+            'by_category' => $byCategory,
         ];
     }
 }

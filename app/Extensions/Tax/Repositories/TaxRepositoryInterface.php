@@ -66,5 +66,5 @@ interface TaxRepositoryInterface
      *
      * @return array<int, array{amount: string, category: string|null, date: string, description: string}>
      */
-    public function getDeductibleJournals(int $profileId, Carbon $start, Carbon $end): array;
+    public function getDeductibleJournals(TaxProfile $profile, Carbon $start, Carbon $end): array;
 }

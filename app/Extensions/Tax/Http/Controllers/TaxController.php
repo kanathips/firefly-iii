@@ -50,8 +50,6 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $this->repository->setUser(auth()->user());
-
         $profile  = $this->repository->createProfile($validator->validated());
 
         return response()->json(['data' => $this->transformer->transform($profile)], 201);
@@ -63,8 +61,6 @@ class TaxController extends Controller
 
     public function index(): JsonResponse
     {
-        $this->repository->setUser(auth()->user());
-
         $profiles = $this->repository->getProfiles();
 
         $data     = $profiles->map(fn ($p) => $this->transformer->transform($p))->values()->toArray();
@@ -88,8 +84,6 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $this->repository->setUser(auth()->user());
-
         $profile = $this->repository->findProfile($profileId);
 
         if (null === $profile) {
@@ -101,7 +95,7 @@ class TaxController extends Controller
         $end    = Carbon::parse($params['end']);
         $period = $params['period'] ?? 'month';
 
-        $summary = $this->calculationService->buildSummary($profileId, $start, $end, $period);
+        $summary = $this->calculationService->buildSummary($profile, $start, $end, $period);
 
         return response()->json($this->transformer->transformSummary($summary));
     }
@@ -121,8 +115,6 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $this->repository->setUser(auth()->user());
-
         $profile = $this->repository->findProfile($profileId);
 
         if (null === $profile) {
@@ -132,7 +124,7 @@ class TaxController extends Controller
         $params   = $validator->validated();
         $start    = Carbon::parse($params['start']);
         $end      = Carbon::parse($params['end']);
-        $journals = $this->repository->getDeductibleJournals($profileId, $start, $end);
+        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $csv      = $this->buildCsv($journals);
         $filename = sprintf('tax-export-%s-%d.csv', $profile->name, $profile->tax_year);
@@ -156,8 +148,6 @@ class TaxController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
-        $this->repository->setUser(auth()->user());
 
         $profile = $this->repository->findProfile($profileId);
 
@@ -188,18 +178,22 @@ class TaxController extends Controller
      */
     private function buildCsv(array $journals): string
     {
-        $lines   = [];
-        $lines[] = 'date,description,category,amount';
+        $handle = fopen('php://memory', 'r+');
+        fputcsv($handle, ['date', 'description', 'category', 'amount']);
 
         foreach ($journals as $journal) {
-            $lines[] = implode(',', [
+            fputcsv($handle, [
                 $journal['date'],
-                '"' . str_replace('"', '""', (string) $journal['description']) . '"',
-                '"' . str_replace('"', '""', (string) ($journal['category'] ?? '')) . '"',
+                $journal['description'],
+                $journal['category'] ?? '',
                 $journal['amount'],
             ]);
         }
 
-        return implode("\n", $lines) . "\n";
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return $csv ?: '';
     }
 }
