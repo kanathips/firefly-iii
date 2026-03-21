@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\unit\Extensions\Tax\Services;
 
 use Carbon\Carbon;
+use FireflyIII\Extensions\Tax\Models\TaxProfile;
 use FireflyIII\Extensions\Tax\Repositories\TaxRepositoryInterface;
 use FireflyIII\Extensions\Tax\Services\TaxCalculationService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,21 +37,21 @@ final class TaxCalculationServiceTest extends TestCase
 
     public function testComputeDeductibleTotalsReturnsSummedAmounts(): void
     {
-        $profileId = 1;
-        $start     = Carbon::parse('2025-01-01');
-        $end       = Carbon::parse('2025-12-31');
+        $profile = new TaxProfile(['id' => 1, 'name' => 'Test', 'tax_year' => 2025]);
+        $start   = Carbon::parse('2025-01-01');
+        $end     = Carbon::parse('2025-12-31');
 
         $this->repository
             ->expects($this->once())
             ->method('getDeductibleJournals')
-            ->with($profileId, $start, $end)
+            ->with($profile, $start, $end)
             ->willReturn([
                 ['amount' => '-50.00', 'category' => 'Medical', 'date' => '2025-03-15'],
                 ['amount' => '-120.00', 'category' => 'Medical', 'date' => '2025-06-10'],
                 ['amount' => '-80.00', 'category' => 'Office', 'date' => '2025-09-20'],
             ]);
 
-        $result = $this->service->computeDeductibleTotals($profileId, $start, $end);
+        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('total', $result);
@@ -62,16 +63,16 @@ final class TaxCalculationServiceTest extends TestCase
 
     public function testComputeDeductibleTotalsReturnsZeroForEmptyJournals(): void
     {
-        $profileId = 1;
-        $start     = Carbon::parse('2025-01-01');
-        $end       = Carbon::parse('2025-12-31');
+        $profile = new TaxProfile(['id' => 1, 'name' => 'Test', 'tax_year' => 2025]);
+        $start   = Carbon::parse('2025-01-01');
+        $end     = Carbon::parse('2025-12-31');
 
         $this->repository
             ->expects($this->once())
             ->method('getDeductibleJournals')
             ->willReturn([]);
 
-        $result = $this->service->computeDeductibleTotals($profileId, $start, $end);
+        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertSame(0.0, $result['total']);
         $this->assertSame([], $result['by_category']);
@@ -79,9 +80,9 @@ final class TaxCalculationServiceTest extends TestCase
 
     public function testComputeDeductibleTotalsHandlesNullCategory(): void
     {
-        $profileId = 1;
-        $start     = Carbon::parse('2025-01-01');
-        $end       = Carbon::parse('2025-12-31');
+        $profile = new TaxProfile(['id' => 1, 'name' => 'Test', 'tax_year' => 2025]);
+        $start   = Carbon::parse('2025-01-01');
+        $end     = Carbon::parse('2025-12-31');
 
         $this->repository
             ->expects($this->once())
@@ -90,7 +91,7 @@ final class TaxCalculationServiceTest extends TestCase
                 ['amount' => '-30.00', 'category' => null, 'date' => '2025-04-01'],
             ]);
 
-        $result = $this->service->computeDeductibleTotals($profileId, $start, $end);
+        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertEqualsWithDelta(30.00, $result['total'], 0.001);
         $this->assertArrayHasKey('(none)', $result['by_category']);
@@ -99,9 +100,9 @@ final class TaxCalculationServiceTest extends TestCase
 
     public function testComputeDeductibleTotalsAbsoluteValueOfNegativeAmounts(): void
     {
-        $profileId = 42;
-        $start     = Carbon::parse('2025-01-01');
-        $end       = Carbon::parse('2025-12-31');
+        $profile = new TaxProfile(['id' => 42, 'name' => 'Test', 'tax_year' => 2025]);
+        $start   = Carbon::parse('2025-01-01');
+        $end     = Carbon::parse('2025-12-31');
 
         $this->repository
             ->expects($this->once())
@@ -110,7 +111,7 @@ final class TaxCalculationServiceTest extends TestCase
                 ['amount' => '-99.99', 'category' => 'Transport', 'date' => '2025-01-15'],
             ]);
 
-        $result = $this->service->computeDeductibleTotals($profileId, $start, $end);
+        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertGreaterThan(0, $result['total']);
         $this->assertEqualsWithDelta(99.99, $result['total'], 0.001);
@@ -223,9 +224,9 @@ final class TaxCalculationServiceTest extends TestCase
 
     public function testBuildSummaryReturnsMandatoryKeys(): void
     {
-        $profileId = 5;
-        $start     = Carbon::parse('2025-01-01');
-        $end       = Carbon::parse('2025-12-31');
+        $profile = new TaxProfile(['id' => 5, 'name' => 'Test', 'tax_year' => 2025]);
+        $start   = Carbon::parse('2025-01-01');
+        $end     = Carbon::parse('2025-12-31');
 
         $this->repository
             ->expects($this->once())
@@ -234,7 +235,7 @@ final class TaxCalculationServiceTest extends TestCase
                 ['amount' => '-200.00', 'category' => 'Medical', 'date' => '2025-07-01'],
             ]);
 
-        $summary = $this->service->buildSummary($profileId, $start, $end, 'month');
+        $summary = $this->service->buildSummary($profile, $start, $end, 'month');
 
         $this->assertArrayHasKey('profile_id', $summary);
         $this->assertArrayHasKey('start', $summary);
@@ -242,7 +243,7 @@ final class TaxCalculationServiceTest extends TestCase
         $this->assertArrayHasKey('total_deductible', $summary);
         $this->assertArrayHasKey('by_category', $summary);
         $this->assertArrayHasKey('by_period', $summary);
-        $this->assertSame($profileId, $summary['profile_id']);
+        $this->assertSame($profile->id, $summary['profile_id']);
         $this->assertEqualsWithDelta(200.00, $summary['total_deductible'], 0.001);
     }
 }
