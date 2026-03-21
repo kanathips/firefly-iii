@@ -29,6 +29,7 @@ use FireflyIII\Models\UserRole;
 use FireflyIII\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Laravel\Passport\Passport;
 use Tests\integration\Traits\CollectsValues;
 
 /**
@@ -64,6 +65,8 @@ abstract class TestCase extends BaseTestCase
         $user  = User::create(['email' => 'test@email.com', 'password' => 'password', 'user_group_id' => $group->id]);
 
         GroupMembership::create(['user_id' => $user->id, 'user_group_id' => $group->id, 'user_role_id' => $role->id]);
+
+        Passport::actingAs($user);
 
         return $user;
     }
