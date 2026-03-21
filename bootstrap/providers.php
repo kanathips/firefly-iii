@@ -21,6 +21,9 @@
 
 declare(strict_types=1);
 
+use FireflyIII\Extensions\GoogleSheets\Providers\GoogleSheetsServiceProvider;
+use FireflyIII\Extensions\Import\Providers\ImportServiceProvider;
+use FireflyIII\Extensions\Providers\AIServiceProvider;
 use FireflyIII\Extensions\Providers\ExtensionsServiceProvider;
 use FireflyIII\Providers\AccountServiceProvider;
 use FireflyIII\Providers\AdminServiceProvider;
@@ -74,4 +77,7 @@ return [
 
     // Extensions
     ExtensionsServiceProvider::class,
+    AIServiceProvider::class,
+    ImportServiceProvider::class,
+    GoogleSheetsServiceProvider::class,
 ];
