@@ -1,6 +1,10 @@
 name: "Validate and Test"
 
 on:
+  pull_request:
+  push:
+    branches:
+      - main
   workflow_call:
     inputs:
       php-version:
@@ -83,14 +87,14 @@ jobs:
           echo "✅ PHP linting passed"
 
       - name: Setup Node.js
-        if: ${{ inputs.build-assets }}
+        if: ${{ inputs.build-assets || github.event_name != 'workflow_call' }}
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
       - name: Build JavaScript Assets
-        if: ${{ inputs.build-assets }}
+        if: ${{ inputs.build-assets || github.event_name != 'workflow_call' }}
         run: |
           npm ci
           npm run build
@@ -142,7 +146,7 @@ jobs:
           ./.ci/phpmd.sh || echo "⚠️  PHPMD issues found (non-blocking)"
 
       - name: Run Unit Tests
-        if: ${{ inputs.run-tests }}
+        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
         run: |
           echo "Running unit tests..."
           composer run-script unit-test || {
@@ -156,7 +160,7 @@ jobs:
           DB_DATABASE: ":memory:"
 
       - name: Run Integration Tests
-        if: ${{ inputs.run-tests }}
+        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
         run: |
           echo "Running integration tests..."
           composer run-script integration-test || {
@@ -170,7 +174,7 @@ jobs:
           DB_DATABASE: ":memory:"
 
       - name: Generate Test Coverage Report
-        if: ${{ inputs.run-tests }}
+        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
         continue-on-error: true
         run: |
           echo "Generating coverage report..."
@@ -181,7 +185,7 @@ jobs:
           DB_DATABASE: ":memory:"
 
       - name: Upload Coverage to Codecov
-        if: ${{ inputs.run-tests }}
+        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
         continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
