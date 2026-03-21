@@ -39,7 +39,7 @@ class PaginationDateRangeRequest extends AggregateFormRequest
     protected function getRequests(): array
     {
         return [
-            DateRangeRequest::class,
+            [DateRangeRequest::class, 'optional'],
             [ObjectTypeApiRequest::class, 'object_type' => Transaction::class],
             [PaginationRequest::class, 'sort_class' => Transaction::class],
         ];

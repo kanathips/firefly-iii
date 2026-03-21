@@ -27,6 +27,8 @@ use Illuminate\Contracts\Validation\Validator;
 
 class DateRangeRequest extends ApiRequest
 {
+    protected string $required = 'required';
+
     public function rules(): array
     {
         return [

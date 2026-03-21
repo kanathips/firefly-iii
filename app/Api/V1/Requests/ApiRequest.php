@@ -41,5 +41,8 @@ class ApiRequest extends FormRequest
         if (in_array('required', $config, true)) {
             $this->required = 'required';
         }
+        if (in_array('optional', $config, true)) {
+            $this->required = '';
+        }
     }
 }
