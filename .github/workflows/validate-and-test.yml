@@ -57,7 +57,7 @@ jobs:
 
       - name: Install Composer Dependencies
         run: |
-          cp .env.example .env
+          cp .env.testing .env
           composer install --prefer-dist --no-progress --no-suggest --no-scripts
 
       - name: Generate Application Key
