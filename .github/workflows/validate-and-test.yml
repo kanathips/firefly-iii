@@ -57,7 +57,7 @@ jobs:
 
       - name: Install Composer Dependencies
         run: |
-          cp .env.example .env.testing
+          cp .env.example .env
           composer install --prefer-dist --no-progress --no-suggest --no-scripts
 
       - name: Lint PHP Files
