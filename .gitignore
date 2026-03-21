@@ -29,8 +29,10 @@ resources/assets/v2/node_modules
 resources/assets/v2/build
 public/v2/i18n
 
-# Agent
-.claude
+# Claude Code Agent
+.claude/
 CLAUDE.md
-.understand-anything
-.fastembed_cache
+
+# Development tool caches
+.understand-anything/
+.fastembed_cache/
