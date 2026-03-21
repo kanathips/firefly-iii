@@ -33,6 +33,9 @@ public/v2/i18n
 .claude/
 CLAUDE.md
 
+# CI generated reports
+phpstan-report.txt
+
 # Development tool caches
 .understand-anything/
 .fastembed_cache/
