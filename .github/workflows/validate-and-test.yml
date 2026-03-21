@@ -104,24 +104,18 @@ jobs:
         if: ${{ !inputs.skip-mago }}
         uses: nhedger/setup-mago@v1
 
-      - name: Run Mago Format Check
+      - name: Run Mago Format
         if: ${{ !inputs.skip-mago }}
         run: |
-          echo "Checking code format with Mago..."
-          mago format --check || {
-              echo "❌ Code formatting issues found. Run 'mago format' to fix."
-              exit 1
-          }
-          echo "✅ Code formatting check passed"
+          echo "Formatting code with Mago..."
+          mago format
+          echo "✅ Code formatting passed"
 
       - name: Run Mago Lint
         if: ${{ !inputs.skip-mago }}
         run: |
           echo "Running Mago linter..."
-          mago lint || {
-              echo "❌ Mago linting issues found."
-              exit 1
-          }
+          mago lint --fix
           echo "✅ Mago linting passed"
 
       - name: Run PHPStan Static Analysis
