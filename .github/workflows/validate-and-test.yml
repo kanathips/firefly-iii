@@ -94,8 +94,11 @@ jobs:
       - name: Build JavaScript Assets
         if: ${{ inputs.build-assets || github.event_name != 'workflow_call' }}
         run: |
-          npm ci
-          npm run build
+        run: |
+          npm install
+          npm run prod  --workspace=v1
+          npm run build --workspace=v2
+          npm update
           echo "✅ JavaScript assets built"
 
       - name: Setup Mago
