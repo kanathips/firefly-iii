@@ -112,7 +112,9 @@
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3",
+        "carthage-software/mago": "*",
         "driftingly/rector-laravel": "^2.0",
+        "ergebnis/phpstan-rules": "^2",
         "fakerphp/faker": "1.*",
         "filp/whoops": "2.*",
         "fruitcake/laravel-debugbar": "^4.0",
@@ -125,10 +127,8 @@
         "phpstan/phpstan-strict-rules": "^2",
         "phpunit/phpunit": "^12",
         "rector/rector": "^2.3",
-        "thecodingmachine/phpstan-safe-rule": "^1.4",
-        "ergebnis/phpstan-rules": "^2"
+        "thecodingmachine/phpstan-safe-rule": "^1.4"
     },
-
     "suggest": {},
     "autoload": {
         "psr-4": {

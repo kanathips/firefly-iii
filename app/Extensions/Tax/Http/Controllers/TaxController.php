@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Validator;
  *   GET    /profiles/{profile}/export       – CSV export
  *   POST   /profiles/{profile}/tags         – link a tag to a profile
  */
-class TaxController extends Controller
+final class TaxController extends Controller
 {
     public function __construct(
         private readonly TaxRepositoryInterface $repository,
@@ -50,7 +50,7 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $profile  = $this->repository->createProfile($validator->validated());
+        $profile   = $this->repository->createProfile($validator->validated());
 
         return response()->json(['data' => $this->transformer->transform($profile)], 201);
     }
@@ -84,18 +84,18 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $profile = $this->repository->findProfile($profileId);
+        $profile   = $this->repository->findProfile($profileId);
 
         if (null === $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
-        $params = $validator->validated();
-        $start  = Carbon::parse($params['start']);
-        $end    = Carbon::parse($params['end']);
-        $period = $params['period'] ?? 'month';
+        $params    = $validator->validated();
+        $start     = Carbon::parse($params['start']);
+        $end       = Carbon::parse($params['end']);
+        $period    = $params['period'] ?? 'month';
 
-        $summary = $this->calculationService->buildSummary($profile, $start, $end, $period);
+        $summary   = $this->calculationService->buildSummary($profile, $start, $end, $period);
 
         return response()->json($this->transformer->transformSummary($summary));
     }
@@ -104,7 +104,7 @@ class TaxController extends Controller
     // GET /api/v1/ext/tax/profiles/{profile}/export
     // -----------------------------------------------------------------------
 
-    public function export(Request $request, int $profileId): Response|JsonResponse
+    public function export(Request $request, int $profileId): JsonResponse|Response
     {
         $validator = Validator::make($request->query(), [
             'start' => 'required|date_format:Y-m-d',
@@ -115,19 +115,19 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $profile = $this->repository->findProfile($profileId);
+        $profile   = $this->repository->findProfile($profileId);
 
         if (null === $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
-        $params   = $validator->validated();
-        $start    = Carbon::parse($params['start']);
-        $end      = Carbon::parse($params['end']);
-        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
+        $params    = $validator->validated();
+        $start     = Carbon::parse($params['start']);
+        $end       = Carbon::parse($params['end']);
+        $journals  = $this->repository->getDeductibleJournals($profile, $start, $end);
 
-        $csv      = $this->buildCsv($journals);
-        $filename = sprintf('tax-export-%s-%d.csv', $profile->name, $profile->tax_year);
+        $csv       = $this->buildCsv($journals);
+        $filename  = sprintf('tax-export-%s-%d.csv', $profile->name, $profile->tax_year);
 
         return response($csv, 200, [
             'Content-Type'        => 'text/csv; charset=UTF-8',
@@ -149,15 +149,15 @@ class TaxController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $profile = $this->repository->findProfile($profileId);
+        $profile   = $this->repository->findProfile($profileId);
 
         if (null === $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
         /** @var Tag $tag */
-        $tag  = auth()->user()->tags()->findOrFail($request->integer('tag_id'));
-        $link = $this->repository->linkTag($profile, $tag);
+        $tag       = auth()->user()->tags()->findOrFail($request->integer('tag_id'));
+        $link      = $this->repository->linkTag($profile, $tag);
 
         return response()->json([
             'data' => [
@@ -174,7 +174,7 @@ class TaxController extends Controller
     /**
      * Build a CSV string from journal rows.
      *
-     * @param  array<int, array{amount: string, category: string|null, date: string, description: string}>  $journals
+     * @param array<int, array{amount: string, category: null|string, date: string, description: string}> $journals
      */
     private function buildCsv(array $journals): string
     {
@@ -191,9 +191,9 @@ class TaxController extends Controller
         }
 
         rewind($handle);
-        $csv = stream_get_contents($handle);
+        $csv    = stream_get_contents($handle);
         fclose($handle);
 
-        return $csv ?: '';
+        return $csv ?? '';
     }
 }

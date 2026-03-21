@@ -44,11 +44,12 @@ class TaxCalculationService
      * Each group contains:
      *   ['total' => float, 'journals' => array]
      *
-     * @param  array<int, array{amount: string, category: string|null, date: string}>  $journals
-     * @param  string  $period  'month' or 'year'
+     * @param array<int, array{amount: string, category: null|string, date: string}> $journals
+     * @param string                                                                 $period   'month' or 'year'
+     *
      * @return array<string, array{total: float, journals: array}>
      *
-     * @throws InvalidArgumentException  when an unsupported period is supplied
+     * @throws InvalidArgumentException when an unsupported period is supplied
      */
     public function groupByPeriod(array $journals, string $period): array
     {
@@ -66,16 +67,16 @@ class TaxCalculationService
         $groups = [];
 
         foreach ($journals as $journal) {
-            $date   = Carbon::parse($journal['date']);
-            $key    = 'month' === $period ? $date->format('Y-m') : $date->format('Y');
-            $amount = abs((float) $journal['amount']);
+            $date                       = Carbon::parse($journal['date']);
+            $key                        = 'month' === $period ? $date->format('Y-m') : $date->format('Y');
+            $amount                     = abs((float) $journal['amount']);
 
             if (!array_key_exists($key, $groups)) {
                 $groups[$key] = ['total' => 0.0, 'journals' => []];
             }
 
             $groups[$key]['total']      += $amount;
-            $groups[$key]['journals'][]  = $journal;
+            $groups[$key]['journals'][] = $journal;
         }
 
         ksort($groups);
@@ -86,11 +87,12 @@ class TaxCalculationService
     /**
      * Apply a percentage tax rate to a deductible amount.
      *
-     * @param  float  $amount   the deductible amount (positive)
-     * @param  float  $rate     the tax rate as a percentage, e.g. 20.0 for 20%
-     * @return float            the tax amount
+     * @param float $amount the deductible amount (positive)
+     * @param float $rate   the tax rate as a percentage, e.g. 20.0 for 20%
      *
-     * @throws InvalidArgumentException  when $rate is outside [0, 100]
+     * @return float the tax amount
+     *
+     * @throws InvalidArgumentException when $rate is outside [0, 100]
      */
     public function computeTaxRate(float $amount, float $rate): float
     {
@@ -142,7 +144,8 @@ class TaxCalculationService
     /**
      * Compute category totals from a journal array (DRY helper).
      *
-     * @param  array<int, array{amount: string, category: string|null, date: string, description: string}>  $journals
+     * @param array<int, array{amount: string, category: null|string, date: string, description: string}> $journals
+     *
      * @return array{total: float, by_category: array<string, float>}
      */
     private function computeTotalsFromJournals(array $journals): array
@@ -151,12 +154,12 @@ class TaxCalculationService
         $byCategory = [];
 
         foreach ($journals as $journal) {
-            $amount   = abs((float) $journal['amount']);
-            $category = $journal['category'] ?? null;
-            $key      = (null === $category || '' === $category) ? '(none)' : $category;
+            $amount           = abs((float) $journal['amount']);
+            $category         = $journal['category'] ?? null;
+            $key              = (null === $category || '' === $category) ? '(none)' : $category;
 
             $total               += $amount;
-            $byCategory[$key]     = ($byCategory[$key] ?? 0.0) + $amount;
+            $byCategory[$key] = ($byCategory[$key] ?? 0.0) + $amount;
         }
 
         return [

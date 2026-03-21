@@ -21,9 +21,9 @@ class TaxSummaryTransformer
      *     name: string,
      *     tax_year: int,
      *     tax_rate: float,
-     *     notes: string|null,
-     *     created_at: string|null,
-     *     updated_at: string|null,
+     *     notes: null|string,
+     *     created_at: null|string,
+     *     updated_at: null|string,
      *   }
      * }
      */
@@ -54,6 +54,7 @@ class TaxSummaryTransformer
      *   by_category: array<string, float>,
      *   by_period: array<string, array{total: float, journals: array}>
      * } $summary
+     *
      * @return array{
      *   data: array{
      *     profile_id: int,
