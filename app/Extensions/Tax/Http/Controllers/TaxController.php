@@ -156,7 +156,7 @@ class TaxController extends Controller
         }
 
         /** @var Tag $tag */
-        $tag  = Tag::findOrFail($request->integer('tag_id'));
+        $tag  = auth()->user()->tags()->findOrFail($request->integer('tag_id'));
         $link = $this->repository->linkTag($profile, $tag);
 
         return response()->json([
