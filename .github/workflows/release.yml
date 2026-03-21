@@ -69,14 +69,14 @@ jobs:
           #
           # Always check out origin/develop, unless its a branch release.
           #
-          BRANCH_TO_PULL=origin/develop
+          LOCAL_BRANCH=develop
           if [[ "$version" == branch* ]]; then
-            BRANCH_TO_PULL=origin/$version
+            LOCAL_BRANCH=$version
           fi
 
-          echo "Version is '$version', check out '$BRANCH_TO_PULL'-branch"
+          echo "Version is '$version', check out '$LOCAL_BRANCH'-branch"
 
-          git checkout --track $BRANCH_TO_PULL
+          git checkout -B $LOCAL_BRANCH origin/$LOCAL_BRANCH
           git pull
           echo "Current branch is $(git branch --show-current)"
         env:
