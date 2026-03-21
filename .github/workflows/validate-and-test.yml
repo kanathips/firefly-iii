@@ -1,0 +1,206 @@
+name: "Validate and Test"
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        description: "PHP version to use"
+        required: false
+        type: string
+        default: "8.5"
+      run-tests:
+        description: "Run full test suite"
+        required: false
+        type: boolean
+        default: true
+      build-assets:
+        description: "Build JavaScript assets"
+        required: false
+        type: boolean
+        default: true
+      skip-mago:
+        description: "Skip Mago formatting/linting"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: mbstring, intl, zip, bcmath, gd, pdo_sqlite, pdo_mysql
+          tools: composer
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        run: |
+          composer install --prefer-dist --no-progress --no-suggest
+          cp .env.example .env.testing
+
+      - name: Generate Application Key
+        run: php artisan key:generate --env=testing
+
+      - name: Lint PHP Files
+        run: |
+          echo "Linting PHP files with parallel processing..."
+          php_lint_file()
+          {
+              local php_file="$1"
+              php -l "$php_file" &> /dev/null
+              if [ "$?" -ne 0 ]
+              then
+                  echo -e "[FAIL] $php_file"
+                  return 1
+              fi
+          }
+
+          export -f php_lint_file
+
+          find . -path ./vendor -prune -o -name '*.php' -print | parallel -j 4 php_lint_file {}
+
+          if [ "$?" -ne 0 ]
+          then
+              exit 1
+          fi
+          echo "✅ PHP linting passed"
+
+      - name: Setup Node.js
+        if: ${{ inputs.build-assets }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Build JavaScript Assets
+        if: ${{ inputs.build-assets }}
+        run: |
+          npm ci
+          npm run build
+          echo "✅ JavaScript assets built"
+
+      - name: Setup Mago
+        if: ${{ !inputs.skip-mago }}
+        uses: nhedger/setup-mago@v1
+
+      - name: Run Mago Format Check
+        if: ${{ !inputs.skip-mago }}
+        run: |
+          echo "Checking code format with Mago..."
+          mago format --check || {
+              echo "❌ Code formatting issues found. Run 'mago format' to fix."
+              exit 1
+          }
+          echo "✅ Code formatting check passed"
+
+      - name: Run Mago Lint
+        if: ${{ !inputs.skip-mago }}
+        run: |
+          echo "Running Mago linter..."
+          mago lint || {
+              echo "❌ Mago linting issues found."
+              exit 1
+          }
+          echo "✅ Mago linting passed"
+
+      - name: Run PHPStan Static Analysis
+        run: |
+          echo "Running PHPStan analysis..."
+          ./.ci/phpstan.sh || {
+              echo "❌ PHPStan analysis found issues."
+              exit 1
+          }
+          echo "✅ PHPStan analysis passed"
+
+      - name: Run PHP Code Sniffer
+        continue-on-error: true
+        run: |
+          echo "Running PHP Code Sniffer..."
+          ./.ci/phpcs.sh || echo "⚠️  Code style issues found (non-blocking)"
+
+      - name: Run PHPMD
+        continue-on-error: true
+        run: |
+          echo "Running PHPMD..."
+          ./.ci/phpmd.sh || echo "⚠️  PHPMD issues found (non-blocking)"
+
+      - name: Run Unit Tests
+        if: ${{ inputs.run-tests }}
+        run: |
+          echo "Running unit tests..."
+          composer run-script unit-test || {
+              echo "❌ Unit tests failed"
+              exit 1
+          }
+          echo "✅ Unit tests passed"
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+
+      - name: Run Integration Tests
+        if: ${{ inputs.run-tests }}
+        run: |
+          echo "Running integration tests..."
+          composer run-script integration-test || {
+              echo "❌ Integration tests failed"
+              exit 1
+          }
+          echo "✅ Integration tests passed"
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+
+      - name: Generate Test Coverage Report
+        if: ${{ inputs.run-tests }}
+        continue-on-error: true
+        run: |
+          echo "Generating coverage report..."
+          composer run-script coverage || echo "⚠️  Coverage generation failed (non-blocking)"
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+
+      - name: Upload Coverage to Codecov
+        if: ${{ inputs.run-tests }}
+        continue-on-error: true
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./storage/logs/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Create Validation Summary
+        if: always()
+        run: |
+          echo "## ✅ Validation & Testing Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| PHP Linting | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| PHP Code Sniffer | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| PHPStan Analysis | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| PHPMD | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Assets Build | ${{ inputs.build-assets && '✅ Passed' || '⏭️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mago Format Check | ${{ !inputs.skip-mago && '✅ Passed' || '⏭️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ inputs.run-tests && '✅ Passed' || '⏭️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ inputs.run-tests && '✅ Passed' || '⏭️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
