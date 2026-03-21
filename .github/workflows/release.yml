@@ -34,8 +34,9 @@ jobs:
         id: gpg-check
         env:
           GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.PASSPHRASE }}
         run: |
-          if [ -n "$GPG_KEY" ]; then
+          if [ -n "$GPG_KEY" ] && [ -n "$GPG_PASSPHRASE" ]; then
             echo "has_key=true" >> $GITHUB_OUTPUT
           else
             echo "has_key=false" >> $GITHUB_OUTPUT
