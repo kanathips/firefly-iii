@@ -94,7 +94,6 @@ jobs:
       - name: Build JavaScript Assets
         if: ${{ inputs.build-assets || github.event_name != 'workflow_call' }}
         run: |
-        run: |
           npm install
           npm run prod  --workspace=v1
           npm run build --workspace=v2
