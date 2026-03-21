@@ -31,7 +31,6 @@ public/v2/i18n
 
 # Claude Code Agent
 .claude/
-CLAUDE.md
 
 # Development tool caches
 .understand-anything/
