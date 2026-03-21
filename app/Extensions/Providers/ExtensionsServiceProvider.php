@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace FireflyIII\Extensions\Providers;
 
-use Illuminate\Support\Facades\Route;
+use FireflyIII\Extensions\Investment\Providers\InvestmentServiceProvider;
+use FireflyIII\Extensions\Notifications\Providers\NotificationServiceProvider;
+use FireflyIII\Extensions\Tax\Providers\TaxServiceProvider;
 use Illuminate\Support\ServiceProvider;
 
 class ExtensionsServiceProvider extends ServiceProvider
@@ -18,6 +20,8 @@ class ExtensionsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        // Bindings registered here
+        $this->app->register(TaxServiceProvider::class);
+        $this->app->register(InvestmentServiceProvider::class);
+        $this->app->register(NotificationServiceProvider::class);
     }
 }

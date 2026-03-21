@@ -26,9 +26,12 @@ namespace Tests\feature;
 
 use FireflyIII\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Tests\integration\CreatesApplication;
 
 abstract class TestCase extends BaseTestCase
 {
+    use CreatesApplication;
+
     protected $seed = true;
 
     protected function createUser(): User
