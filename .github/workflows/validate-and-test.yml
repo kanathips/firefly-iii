@@ -66,10 +66,11 @@ jobs:
       - name: Generate Passport Keys
         run: |
           php artisan passport:keys
+          DELIM=$(openssl rand -hex 16)
           {
-            echo 'PASSPORT_PRIVATE_KEY<<EOF'
+            echo "PASSPORT_PRIVATE_KEY<<${DELIM}"
             cat storage/oauth-private.key
-            echo 'EOF'
+            echo "${DELIM}"
           } >> $GITHUB_ENV
           echo "PASSPORT_PUBLIC_KEY_FILE=$(pwd)/storage/oauth-public.key" >> $GITHUB_ENV
 
