@@ -55,13 +55,20 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
+      - name: Generate Passport Keys
+        run: |
+          php artisan passport:keys --env=testing
+          {
+            echo 'PASSPORT_PRIVATE_KEY<<EOF'
+            cat storage/oauth-private.key
+            echo 'EOF'
+          } >> $GITHUB_ENV
+          echo "PASSPORT_PUBLIC_KEY_FILE=$(pwd)/storage/oauth-public.key" >> $GITHUB_ENV
+
       - name: Install Composer Dependencies
         run: |
           composer install --prefer-dist --no-progress --no-suggest
           cp .env.example .env.testing
-
-      - name: Generate Application Key
-        run: php artisan key:generate --env=testing
 
       - name: Lint PHP Files
         run: |
