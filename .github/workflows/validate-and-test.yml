@@ -35,12 +35,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ inputs.php-version }}
+          php-version: ${{ inputs.php-version || '8.5' }}
           extensions: mbstring, intl, zip, bcmath, gd, pdo_sqlite, pdo_mysql
           tools: composer
 
@@ -60,8 +60,22 @@ jobs:
           cp .env.example .env
           composer install --prefer-dist --no-progress --no-suggest --no-scripts
 
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Generate Passport Keys
+        run: |
+          php artisan passport:keys
+          {
+            echo 'PASSPORT_PRIVATE_KEY<<EOF'
+            cat storage/oauth-private.key
+            echo 'EOF'
+          } >> $GITHUB_ENV
+          echo "PASSPORT_PUBLIC_KEY_FILE=$(pwd)/storage/oauth-public.key" >> $GITHUB_ENV
+
       - name: Lint PHP Files
         run: |
+          sudo apt-get install -y parallel
           echo "Linting PHP files with parallel processing..."
           php_lint_file()
           {
