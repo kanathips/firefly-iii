@@ -34,6 +34,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Composer Setup
         uses: ./.github/actions/composer-setup
         with:
@@ -96,6 +99,9 @@ jobs:
     if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Composer Setup
         uses: ./.github/actions/composer-setup
         with:
