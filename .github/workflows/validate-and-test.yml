@@ -58,8 +58,7 @@ jobs:
       - name: Install Composer Dependencies
         run: |
           cp .env.example .env.testing
-          echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env.testing
-          composer install --prefer-dist --no-progress --no-suggest
+          composer install --prefer-dist --no-progress --no-suggest --no-scripts
 
       - name: Lint PHP Files
         run: |
