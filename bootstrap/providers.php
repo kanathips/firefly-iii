@@ -21,6 +21,7 @@
 
 declare(strict_types=1);
 
+use FireflyIII\Extensions\Providers\ExtensionsServiceProvider;
 use FireflyIII\Providers\AccountServiceProvider;
 use FireflyIII\Providers\AdminServiceProvider;
 use FireflyIII\Providers\AppServiceProvider;
@@ -70,4 +71,7 @@ return [
     TagServiceProvider::class,
     AdminServiceProvider::class,
     RecurringServiceProvider::class,
+
+    // Extensions
+    ExtensionsServiceProvider::class,
 ];
