@@ -36,7 +36,7 @@ class ShowRequest extends AggregateFormRequest
     {
         return [
             [PaginationRequest::class, 'sort_class' => Account::class],
-            DateRangeRequest::class,
+            [DateRangeRequest::class, 'optional'],
             DateRequest::class,
             AccountTypeApiRequest::class,
             // [ObjectTypeApiRequest::class, 'object_type' => Account::class],

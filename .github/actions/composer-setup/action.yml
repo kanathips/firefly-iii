@@ -1,0 +1,41 @@
+name: "Composer Setup"
+description: "Checkout, setup PHP, restore composer cache, and install dependencies"
+
+inputs:
+  php-version:
+    description: "PHP version to use"
+    required: false
+    default: "8.5"
+  coverage:
+    description: "Coverage driver (none, xdebug, pcov)"
+    required: false
+    default: "none"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        extensions: mbstring, intl, zip, bcmath, gd, pdo_sqlite, pdo_mysql
+        tools: composer
+        coverage: ${{ inputs.coverage }}
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      shell: bash
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Composer Dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Composer Dependencies
+      shell: bash
+      run: |
+        cp .env.testing .env
+        composer install --prefer-dist --no-progress --no-suggest --no-scripts --no-interaction -o

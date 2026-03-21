@@ -8,7 +8,10 @@ use Carbon\Carbon;
 use FireflyIII\Extensions\Tax\Models\TaxDeductibleTag;
 use FireflyIII\Extensions\Tax\Models\TaxProfile;
 use FireflyIII\Extensions\Tax\Repositories\TaxRepository;
+use FireflyIII\Models\GroupMembership;
 use FireflyIII\Models\Tag;
+use FireflyIII\Models\UserGroup;
+use FireflyIII\Models\UserRole;
 use FireflyIII\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -24,6 +27,16 @@ final class TaxRepositoryTest extends TestCase
 
     private TaxRepository $repository;
     private User          $user;
+
+    private function createSecondUser(): User
+    {
+        $group = UserGroup::create(['title' => 'other@email.com']);
+        $role  = UserRole::where('title', 'owner')->first();
+        $user  = User::create(['email' => 'other@email.com', 'password' => 'password', 'user_group_id' => $group->id]);
+        GroupMembership::create(['user_id' => $user->id, 'user_group_id' => $group->id, 'user_role_id' => $role->id]);
+
+        return $user;
+    }
 
     protected function setUp(): void
     {
@@ -65,7 +78,7 @@ final class TaxRepositoryTest extends TestCase
     {
         $ownProfile   = $this->repository->createProfile(['name' => 'Mine', 'tax_year' => 2025, 'tax_rate' => 10.0]);
 
-        $otherUser    = $this->createAuthenticatedUser();
+        $otherUser    = $this->createSecondUser();
         $otherRepo    = new TaxRepository();
         $otherRepo->setUser($otherUser);
         $otherProfile = $otherRepo->createProfile(['name' => 'Theirs', 'tax_year' => 2025, 'tax_rate' => 10.0]);
@@ -81,7 +94,7 @@ final class TaxRepositoryTest extends TestCase
         $this->repository->createProfile(['name' => 'Profile A', 'tax_year' => 2025, 'tax_rate' => 10.0]);
         $this->repository->createProfile(['name' => 'Profile B', 'tax_year' => 2024, 'tax_rate' => 15.0]);
 
-        $otherUser = $this->createAuthenticatedUser();
+        $otherUser = $this->createSecondUser();
         $otherRepo = new TaxRepository();
         $otherRepo->setUser($otherUser);
         $otherRepo->createProfile(['name' => 'Other Profile', 'tax_year' => 2025, 'tax_rate' => 5.0]);
