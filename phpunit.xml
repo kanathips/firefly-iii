@@ -60,8 +60,7 @@
             <directory suffix=".php">app</directory>
         </include>
     </source>
-    <coverage ignoreDeprecatedCodeUnits="true"
-              pathCoverage="true">
+    <coverage ignoreDeprecatedCodeUnits="true">
         <report>
             <clover outputFile="coverage.xml"/>
         </report>

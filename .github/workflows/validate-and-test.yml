@@ -30,65 +30,24 @@ on:
         default: false
 
 jobs:
-  validate-and-test:
+  validate:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Composer Setup
+        uses: ./.github/actions/composer-setup
         with:
           php-version: ${{ inputs.php-version || '8.5' }}
-          extensions: mbstring, intl, zip, bcmath, gd, pdo_sqlite, pdo_mysql
-          tools: composer
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: Install Composer Dependencies
-        run: |
-          cp .env.testing .env
-          composer install --prefer-dist --no-progress --no-suggest --no-scripts
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Generate Passport Keys
-        run: php artisan passport:keys
 
       - name: Lint PHP Files
         run: |
           sudo apt-get install -y parallel
           echo "Linting PHP files with parallel processing..."
-          php_lint_file()
-          {
-              local php_file="$1"
-              php -l "$php_file" &> /dev/null
-              if [ "$?" -ne 0 ]
-              then
-                  echo -e "[FAIL] $php_file"
-                  return 1
-              fi
+          php_lint_file() {
+              php -l "$1" &> /dev/null || { echo "[FAIL] $1"; return 1; }
           }
-
           export -f php_lint_file
-
           find . -path ./vendor -prune -o -name '*.php' -print | parallel -j 4 php_lint_file {}
-
-          if [ "$?" -ne 0 ]
-          then
-              exit 1
-          fi
           echo "✅ PHP linting passed"
 
       - name: Setup Node.js
@@ -113,80 +72,52 @@ jobs:
 
       - name: Run Mago Format
         if: ${{ !inputs.skip-mago }}
-        run: |
-          echo "Formatting code with Mago..."
-          mago format
-          echo "✅ Code formatting passed"
+        run: mago format && echo "✅ Code formatting passed"
 
       - name: Run Mago Lint
         if: ${{ !inputs.skip-mago }}
-        run: |
-          echo "Running Mago linter..."
-          mago lint --fix
-          echo "✅ Mago linting passed"
+        run: mago lint --fix && echo "✅ Mago linting passed"
 
       - name: Run PHPStan Static Analysis
         run: |
-          echo "Running PHPStan analysis..."
-          ./.ci/phpstan.sh || {
-              echo "❌ PHPStan analysis found issues."
-              exit 1
-          }
+          ./.ci/phpstan.sh || { echo "❌ PHPStan analysis found issues."; exit 1; }
           echo "✅ PHPStan analysis passed"
 
       - name: Run PHP Code Sniffer
         continue-on-error: true
-        run: |
-          echo "Running PHP Code Sniffer..."
-          ./.ci/phpcs.sh || echo "⚠️  Code style issues found (non-blocking)"
+        run: ./.ci/phpcs.sh || echo "⚠️  Code style issues found (non-blocking)"
 
       - name: Run PHPMD
         continue-on-error: true
-        run: |
-          echo "Running PHPMD..."
-          ./.ci/phpmd.sh || echo "⚠️  PHPMD issues found (non-blocking)"
+        run: ./.ci/phpmd.sh || echo "⚠️  PHPMD issues found (non-blocking)"
 
-      - name: Run Unit Tests
-        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
-        run: |
-          echo "Running unit tests..."
-          composer run-script unit-test || {
-              echo "❌ Unit tests failed"
-              exit 1
-          }
-          echo "✅ Unit tests passed"
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
+  coverage:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
 
-      - name: Run Integration Tests
-        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
-        run: |
-          echo "Running integration tests..."
-          composer run-script integration-test || {
-              echo "❌ Integration tests failed"
-              exit 1
-          }
-          echo "✅ Integration tests passed"
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
+    steps:
+      - name: Composer Setup
+        uses: ./.github/actions/composer-setup
+        with:
+          php-version: ${{ inputs.php-version || '8.5' }}
+          coverage: pcov
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Generate Passport Keys
+        run: php artisan passport:keys
 
       - name: Generate Test Coverage Report
-        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
         continue-on-error: true
         run: |
-          echo "Generating coverage report..."
-          composer run-script coverage || echo "⚠️  Coverage generation failed (non-blocking)"
+          composer run-script coverage --no-interaction || echo "⚠️  Coverage generation failed (non-blocking)"
         env:
           APP_ENV: testing
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
 
       - name: Upload Coverage to Codecov
-        if: ${{ inputs.run-tests || github.event_name != 'workflow_call' }}
         continue-on-error: true
         uses: codecov/codecov-action@v4
         with:
@@ -194,8 +125,13 @@ jobs:
           flags: unittests
           name: codecov-umbrella
 
+  summary:
+    runs-on: ubuntu-latest
+    needs: [validate, coverage]
+    if: always()
+
+    steps:
       - name: Create Validation Summary
-        if: always()
         run: |
           echo "## ✅ Validation & Testing Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
