@@ -14,6 +14,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use function Safe\fclose;
+use function Safe\fopen;
+use function Safe\fputcsv;
+use function Safe\rewind;
+use function Safe\stream_get_contents;
 
 /**
  * REST controller for tax profiles and related operations.
@@ -194,6 +199,6 @@ final class TaxController extends Controller
         $csv    = stream_get_contents($handle);
         fclose($handle);
 
-        return $csv ?? '';
+        return $csv;
     }
 }
