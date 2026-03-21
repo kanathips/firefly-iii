@@ -174,7 +174,7 @@ final class TaxRepositoryTest extends TestCase
         // so we assert the return type and empty result as the underlying journals are not set up.
         $start    = Carbon::parse('2025-01-01');
         $end      = Carbon::parse('2025-12-31');
-        $journals = $this->repository->getDeductibleJournals($profile->id, $start, $end);
+        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $this->assertIsArray($journals);
     }
@@ -185,16 +185,19 @@ final class TaxRepositoryTest extends TestCase
 
         $start    = Carbon::parse('2025-01-01');
         $end      = Carbon::parse('2025-12-31');
-        $journals = $this->repository->getDeductibleJournals($profile->id, $start, $end);
+        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $this->assertSame([], $journals);
     }
 
     public function testGetDeductibleJournalsReturnsEmptyArrayForUnknownProfile(): void
     {
+        $profile  = new TaxProfile();
+        $profile->id = 999999;
+
         $start    = Carbon::parse('2025-01-01');
         $end      = Carbon::parse('2025-12-31');
-        $journals = $this->repository->getDeductibleJournals(999999, $start, $end);
+        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $this->assertSame([], $journals);
     }
