@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 
 interface TaxRepositoryInterface
 {
-    public function setUser(null|Authenticatable|User $user): void;
+    public function setUser(Authenticatable|User|null $user): void;
 
     /**
      * Create a new TaxProfile for the current user.
@@ -64,7 +64,7 @@ interface TaxRepositoryInterface
      *   - date        (string, Y-m-d)
      *   - description (string)
      *
-     * @return array<int, array{amount: string, category: string|null, date: string, description: string}>
+     * @return array<int, array{amount: string, category: null|string, date: string, description: string}>
      */
     public function getDeductibleJournals(TaxProfile $profile, Carbon $start, Carbon $end): array;
 }

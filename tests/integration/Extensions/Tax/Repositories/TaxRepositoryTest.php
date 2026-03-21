@@ -9,7 +9,6 @@ use FireflyIII\Extensions\Tax\Models\TaxDeductibleTag;
 use FireflyIII\Extensions\Tax\Models\TaxProfile;
 use FireflyIII\Extensions\Tax\Repositories\TaxRepository;
 use FireflyIII\Models\Tag;
-use FireflyIII\Models\TransactionJournal;
 use FireflyIII\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -57,7 +56,7 @@ final class TaxRepositoryTest extends TestCase
 
     public function testFindProfileReturnsNullForUnknownId(): void
     {
-        $profile = $this->repository->findProfile(999999);
+        $profile = $this->repository->findProfile(999_999);
 
         $this->assertNull($profile);
     }
@@ -87,7 +86,7 @@ final class TaxRepositoryTest extends TestCase
         $otherRepo->setUser($otherUser);
         $otherRepo->createProfile(['name' => 'Other Profile', 'tax_year' => 2025, 'tax_rate' => 5.0]);
 
-        $profiles = $this->repository->getProfiles();
+        $profiles  = $this->repository->getProfiles();
 
         $this->assertCount(2, $profiles);
     }
@@ -126,7 +125,7 @@ final class TaxRepositoryTest extends TestCase
         $this->repository->linkTag($profile, $tag);
         $this->repository->linkTag($profile, $tag); // second call must not throw or duplicate
 
-        $links = $this->repository->getLinkedTags($profile);
+        $links   = $this->repository->getLinkedTags($profile);
         $this->assertCount(1, $links);
     }
 
@@ -143,7 +142,7 @@ final class TaxRepositoryTest extends TestCase
         $this->repository->linkTag($profile, $tag);
         $this->repository->unlinkTag($profile, $tag);
 
-        $links = $this->repository->getLinkedTags($profile);
+        $links   = $this->repository->getLinkedTags($profile);
         $this->assertCount(0, $links);
     }
 
@@ -161,8 +160,8 @@ final class TaxRepositoryTest extends TestCase
 
     public function testGetDeductibleJournalsReturnsJournalsWithLinkedTags(): void
     {
-        $profile = $this->repository->createProfile(['name' => 'Deductible', 'tax_year' => 2025, 'tax_rate' => 20.0]);
-        $tag     = Tag::create([
+        $profile  = $this->repository->createProfile(['name' => 'Deductible', 'tax_year' => 2025, 'tax_rate' => 20.0]);
+        $tag      = Tag::create([
             'user_id'       => $this->user->id,
             'user_group_id' => $this->user->user_group_id,
             'tag'           => 'medical-expense',
@@ -192,12 +191,12 @@ final class TaxRepositoryTest extends TestCase
 
     public function testGetDeductibleJournalsReturnsEmptyArrayForUnknownProfile(): void
     {
-        $profile  = new TaxProfile();
-        $profile->id = 999999;
+        $profile     = new TaxProfile();
+        $profile->id = 999_999;
 
-        $start    = Carbon::parse('2025-01-01');
-        $end      = Carbon::parse('2025-12-31');
-        $journals = $this->repository->getDeductibleJournals($profile, $start, $end);
+        $start       = Carbon::parse('2025-01-01');
+        $end         = Carbon::parse('2025-12-31');
+        $journals    = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $this->assertSame([], $journals);
     }

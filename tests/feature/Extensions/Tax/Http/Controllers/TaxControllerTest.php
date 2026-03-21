@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\feature\Extensions\Tax\Http\Controllers;
 
-use Carbon\Carbon;
 use FireflyIII\Extensions\Tax\Models\TaxProfile;
 use FireflyIII\Extensions\Tax\Repositories\TaxRepositoryInterface;
 use FireflyIII\Extensions\Tax\Services\TaxCalculationService;
@@ -49,7 +48,8 @@ final class TaxControllerTest extends TestCase
                 'tax_year' => 2025,
                 'tax_rate' => 20.5,
                 'notes'    => 'Self-employed income',
-            ]);
+            ])
+        ;
 
         $response->assertStatus(201);
         $response->assertJsonStructure([
@@ -72,7 +72,8 @@ final class TaxControllerTest extends TestCase
     public function testStoreProfileValidatesRequiredFields(): void
     {
         $response = $this->actingAs($this->user, 'api')
-            ->postJson('/api/v1/ext/tax/profiles', []);
+            ->postJson('/api/v1/ext/tax/profiles', [])
+        ;
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['name', 'tax_year']);
@@ -84,7 +85,8 @@ final class TaxControllerTest extends TestCase
             ->postJson('/api/v1/ext/tax/profiles', [
                 'name'     => 'Bad Year',
                 'tax_year' => 1800,
-            ]);
+            ])
+        ;
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['tax_year']);
@@ -97,7 +99,8 @@ final class TaxControllerTest extends TestCase
                 'name'     => 'Bad Rate',
                 'tax_year' => 2025,
                 'tax_rate' => 150.0,
-            ]);
+            ])
+        ;
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['tax_rate']);
@@ -127,7 +130,8 @@ final class TaxControllerTest extends TestCase
         TaxProfile::create(['user_id' => $otherUser->id, 'name' => 'Other Profile', 'tax_year' => 2025, 'tax_rate' => 5.0]);
 
         $response   = $this->actingAs($this->user, 'api')
-            ->getJson('/api/v1/ext/tax/profiles');
+            ->getJson('/api/v1/ext/tax/profiles')
+        ;
 
         $response->assertStatus(200);
         $response->assertJsonCount(2, 'data');
@@ -146,7 +150,7 @@ final class TaxControllerTest extends TestCase
 
     public function testGetSummaryReturnsCorrectStructure(): void
     {
-        $profile  = TaxProfile::create([
+        $profile     = TaxProfile::create([
             'user_id'  => $this->user->id,
             'name'     => 'Summary Test',
             'tax_year' => 2025,
@@ -164,12 +168,14 @@ final class TaxControllerTest extends TestCase
                 'total_deductible' => 500.00,
                 'by_category'      => ['Medical' => 500.00],
                 'by_period'        => ['2025-01' => ['total' => 500.00]],
-            ]);
+            ])
+        ;
 
         $this->app->instance(TaxCalculationService::class, $mockService);
 
-        $response = $this->actingAs($this->user, 'api')
-            ->getJson("/api/v1/ext/tax/profiles/{$profile->id}/summary?start=2025-01-01&end=2025-12-31");
+        $response    = $this->actingAs($this->user, 'api')
+            ->getJson("/api/v1/ext/tax/profiles/{$profile->id}/summary?start=2025-01-01&end=2025-12-31")
+        ;
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -195,8 +201,9 @@ final class TaxControllerTest extends TestCase
             'tax_rate' => 10.0,
         ]);
 
-        $response = $this->actingAs($this->user, 'api')
-            ->getJson("/api/v1/ext/tax/profiles/{$profile->id}/summary?start=2025-01-01&end=2025-12-31");
+        $response   = $this->actingAs($this->user, 'api')
+            ->getJson("/api/v1/ext/tax/profiles/{$profile->id}/summary?start=2025-01-01&end=2025-12-31")
+        ;
 
         $response->assertStatus(404);
     }
@@ -211,7 +218,8 @@ final class TaxControllerTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user, 'api')
-            ->getJson("/api/v1/ext/tax/profiles/{$profile->id}/summary");
+            ->getJson("/api/v1/ext/tax/profiles/{$profile->id}/summary")
+        ;
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['start', 'end']);
@@ -223,7 +231,7 @@ final class TaxControllerTest extends TestCase
 
     public function testExportReturnsCsvResponse(): void
     {
-        $profile    = TaxProfile::create([
+        $profile  = TaxProfile::create([
             'user_id'  => $this->user->id,
             'name'     => 'Export Test',
             'tax_year' => 2025,
@@ -238,7 +246,8 @@ final class TaxControllerTest extends TestCase
         $this->app->instance(TaxRepositoryInterface::class, $mockRepo);
 
         $response = $this->actingAs($this->user, 'api')
-            ->get("/api/v1/ext/tax/profiles/{$profile->id}/export?start=2025-01-01&end=2025-12-31");
+            ->get("/api/v1/ext/tax/profiles/{$profile->id}/export?start=2025-01-01&end=2025-12-31")
+        ;
 
         $response->assertStatus(200);
         $this->assertStringContainsString('text/csv', $response->headers->get('Content-Type') ?? '');
@@ -255,8 +264,9 @@ final class TaxControllerTest extends TestCase
             'tax_rate' => 10.0,
         ]);
 
-        $response = $this->actingAs($this->user, 'api')
-            ->get("/api/v1/ext/tax/profiles/{$profile->id}/export?start=2025-01-01&end=2025-12-31");
+        $response   = $this->actingAs($this->user, 'api')
+            ->get("/api/v1/ext/tax/profiles/{$profile->id}/export?start=2025-01-01&end=2025-12-31")
+        ;
 
         $response->assertStatus(404);
     }
@@ -267,13 +277,13 @@ final class TaxControllerTest extends TestCase
 
     public function testLinkTagToProfile(): void
     {
-        $profile = TaxProfile::create([
+        $profile  = TaxProfile::create([
             'user_id'  => $this->user->id,
             'name'     => 'Tag Link Test',
             'tax_year' => 2025,
             'tax_rate' => 20.0,
         ]);
-        $tag     = Tag::create([
+        $tag      = Tag::create([
             'user_id'       => $this->user->id,
             'user_group_id' => $this->user->user_group_id,
             'tag'           => 'medical-deductible',
@@ -283,7 +293,8 @@ final class TaxControllerTest extends TestCase
         $response = $this->actingAs($this->user, 'api')
             ->postJson("/api/v1/ext/tax/profiles/{$profile->id}/tags", [
                 'tag_id' => $tag->id,
-            ]);
+            ])
+        ;
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.tag_id', $tag->id);

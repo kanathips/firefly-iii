@@ -18,7 +18,7 @@ class TaxRepository implements TaxRepositoryInterface
 {
     private User $user;
 
-    public function setUser(null|Authenticatable|User $user): void
+    public function setUser(Authenticatable|User|null $user): void
     {
         /** @var User $user */
         $this->user = $user;
@@ -39,14 +39,16 @@ class TaxRepository implements TaxRepositoryInterface
     {
         return TaxProfile::where('id', $profileId)
             ->where('user_id', $this->user->id)
-            ->first();
+            ->first()
+        ;
     }
 
     public function getProfiles(): Collection
     {
         return TaxProfile::where('user_id', $this->user->id)
             ->orderBy('tax_year', 'desc')
-            ->get();
+            ->get()
+        ;
     }
 
     public function deleteProfile(TaxProfile $profile): void
@@ -60,7 +62,8 @@ class TaxRepository implements TaxRepositoryInterface
         /** @var null|TaxDeductibleTag $existing */
         $existing = TaxDeductibleTag::where('tax_profile_id', $profile->id)
             ->where('tag_id', $tag->id)
-            ->first();
+            ->first()
+        ;
 
         if (null !== $existing) {
             return $existing;
@@ -76,25 +79,28 @@ class TaxRepository implements TaxRepositoryInterface
     {
         TaxDeductibleTag::where('tax_profile_id', $profile->id)
             ->where('tag_id', $tag->id)
-            ->delete();
+            ->delete()
+        ;
     }
 
     public function getLinkedTags(TaxProfile $profile): Collection
     {
         return TaxDeductibleTag::where('tax_profile_id', $profile->id)
             ->with('tag')
-            ->get();
+            ->get()
+        ;
     }
 
     /**
-     * @return array<int, array{amount: string, category: string|null, date: string, description: string}>
+     * @return array<int, array{amount: string, category: null|string, date: string, description: string}>
      */
     public function getDeductibleJournals(TaxProfile $profile, Carbon $start, Carbon $end): array
     {
         // Collect the tag IDs linked to this profile
         $tagIds = TaxDeductibleTag::where('tax_profile_id', $profile->id)
             ->pluck('tag_id')
-            ->toArray();
+            ->toArray()
+        ;
 
         if (0 === count($tagIds)) {
             return [];
@@ -103,7 +109,7 @@ class TaxRepository implements TaxRepositoryInterface
         // Query transaction journals that carry any of the deductible tags.
         // We join tag_transaction_journal and pull the negative (withdrawal)
         // transaction amount plus the optional category name.
-        $rows = DB::table('transaction_journals as tj')
+        $rows   = DB::table('transaction_journals as tj')
             ->select([
                 'tj.description',
                 'tj.date',
@@ -113,7 +119,8 @@ class TaxRepository implements TaxRepositoryInterface
             ->join('tag_transaction_journal as ttj', 'ttj.transaction_journal_id', '=', 'tj.id')
             ->join('transactions as t', static function ($join): void {
                 $join->on('t.transaction_journal_id', '=', 'tj.id')
-                    ->where('t.amount', '<', 0);
+                    ->where('t.amount', '<', 0)
+                ;
             })
             ->leftJoin('category_transaction_journal as ctj', 'ctj.transaction_journal_id', '=', 'tj.id')
             ->leftJoin('categories as c', 'c.id', '=', 'ctj.category_id')
@@ -123,7 +130,8 @@ class TaxRepository implements TaxRepositoryInterface
             ->whereBetween('tj.date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
             ->groupBy('tj.id', 'tj.description', 'tj.date', 'c.name')
             ->orderBy('tj.date')
-            ->get();
+            ->get()
+        ;
 
         return $rows->map(static fn ($row): array => [
             'amount'      => (string) $row->amount,

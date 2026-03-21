@@ -36,3 +36,7 @@ CLAUDE.md
 # Development tool caches
 .understand-anything/
 .fastembed_cache/
+
+#CI Tool
+.phpunit.cache
+phpstan-report.txt

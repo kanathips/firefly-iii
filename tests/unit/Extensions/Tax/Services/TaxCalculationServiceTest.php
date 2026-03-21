@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use InvalidArgumentException;
 
 /**
  * @internal
@@ -49,9 +50,10 @@ final class TaxCalculationServiceTest extends TestCase
                 ['amount' => '-50.00', 'category' => 'Medical', 'date' => '2025-03-15'],
                 ['amount' => '-120.00', 'category' => 'Medical', 'date' => '2025-06-10'],
                 ['amount' => '-80.00', 'category' => 'Office', 'date' => '2025-09-20'],
-            ]);
+            ])
+        ;
 
-        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
+        $result  = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('total', $result);
@@ -70,9 +72,10 @@ final class TaxCalculationServiceTest extends TestCase
         $this->repository
             ->expects($this->once())
             ->method('getDeductibleJournals')
-            ->willReturn([]);
+            ->willReturn([])
+        ;
 
-        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
+        $result  = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertSame(0.0, $result['total']);
         $this->assertSame([], $result['by_category']);
@@ -89,9 +92,10 @@ final class TaxCalculationServiceTest extends TestCase
             ->method('getDeductibleJournals')
             ->willReturn([
                 ['amount' => '-30.00', 'category' => null, 'date' => '2025-04-01'],
-            ]);
+            ])
+        ;
 
-        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
+        $result  = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertEqualsWithDelta(30.00, $result['total'], 0.001);
         $this->assertArrayHasKey('(none)', $result['by_category']);
@@ -109,9 +113,10 @@ final class TaxCalculationServiceTest extends TestCase
             ->method('getDeductibleJournals')
             ->willReturn([
                 ['amount' => '-99.99', 'category' => 'Transport', 'date' => '2025-01-15'],
-            ]);
+            ])
+        ;
 
-        $result = $this->service->computeDeductibleTotals($profile, $start, $end);
+        $result  = $this->service->computeDeductibleTotals($profile, $start, $end);
 
         $this->assertGreaterThan(0, $result['total']);
         $this->assertEqualsWithDelta(99.99, $result['total'], 0.001);
@@ -126,10 +131,10 @@ final class TaxCalculationServiceTest extends TestCase
         $journals = [
             ['amount' => '-50.00', 'category' => 'Medical', 'date' => '2025-01-10'],
             ['amount' => '-20.00', 'category' => 'Medical', 'date' => '2025-01-25'],
-            ['amount' => '-80.00', 'category' => 'Office',  'date' => '2025-02-15'],
+            ['amount' => '-80.00', 'category' => 'Office', 'date' => '2025-02-15'],
         ];
 
-        $result = $this->service->groupByPeriod($journals, 'month');
+        $result   = $this->service->groupByPeriod($journals, 'month');
 
         $this->assertArrayHasKey('2025-01', $result);
         $this->assertArrayHasKey('2025-02', $result);
@@ -141,10 +146,10 @@ final class TaxCalculationServiceTest extends TestCase
     {
         $journals = [
             ['amount' => '-100.00', 'category' => 'Medical', 'date' => '2024-06-01'],
-            ['amount' => '-200.00', 'category' => 'Office',  'date' => '2025-03-01'],
+            ['amount' => '-200.00', 'category' => 'Office', 'date' => '2025-03-01'],
         ];
 
-        $result = $this->service->groupByPeriod($journals, 'year');
+        $result   = $this->service->groupByPeriod($journals, 'year');
 
         $this->assertArrayHasKey('2024', $result);
         $this->assertArrayHasKey('2025', $result);
@@ -159,24 +164,24 @@ final class TaxCalculationServiceTest extends TestCase
         $this->assertSame([], $result);
     }
 
+    #[DataProvider('invalidPeriodProvider')]
+    public function testGroupByPeriodThrowsForUnsupportedPeriod(string $period): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->service->groupByPeriod([], $period);
+    }
+
     /**
      * @return array<string, array<int, string>>
      */
-    public static function invalidPeriodProvider(): array
+    public static function invalidPeriodProvider(): iterable
     {
         return [
             'week'    => ['week'],
             'quarter' => ['quarter'],
             'invalid' => ['invalid'],
         ];
-    }
-
-    #[DataProvider('invalidPeriodProvider')]
-    public function testGroupByPeriodThrowsForUnsupportedPeriod(string $period): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-
-        $this->service->groupByPeriod([], $period);
     }
 
     // -----------------------------------------------------------------------
@@ -206,14 +211,14 @@ final class TaxCalculationServiceTest extends TestCase
 
     public function testComputeTaxRateThrowsForNegativeRate(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->service->computeTaxRate(500.00, -5.0);
     }
 
     public function testComputeTaxRateThrowsForRateOver100(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->service->computeTaxRate(500.00, 101.0);
     }
@@ -233,7 +238,8 @@ final class TaxCalculationServiceTest extends TestCase
             ->method('getDeductibleJournals')
             ->willReturn([
                 ['amount' => '-200.00', 'category' => 'Medical', 'date' => '2025-07-01'],
-            ]);
+            ])
+        ;
 
         $summary = $this->service->buildSummary($profile, $start, $end, 'month');
 
