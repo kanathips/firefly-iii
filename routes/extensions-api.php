@@ -33,7 +33,13 @@ Route::middleware('api')
                 ->name('extensions.tax.profiles.summary');
             Route::get('profiles/{profile}/export', [TaxController::class, 'export'])
                 ->name('extensions.tax.profiles.export');
+            Route::get('profiles/{profile}/tags', [TaxController::class, 'getTags'])
+                ->name('extensions.tax.profiles.tags.index');
             Route::post('profiles/{profile}/tags', [TaxController::class, 'linkTag'])
                 ->name('extensions.tax.profiles.tags.link');
+            Route::delete('profiles/{profile}/tags/{tag}', [TaxController::class, 'unlinkTag'])
+                ->name('extensions.tax.profiles.tags.unlink');
+            Route::delete('profiles/{profile}', [TaxController::class, 'destroy'])
+                ->name('extensions.tax.profiles.destroy');
         });
     });

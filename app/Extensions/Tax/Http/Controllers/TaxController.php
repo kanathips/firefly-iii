@@ -136,6 +136,28 @@ class TaxController extends Controller
     }
 
     // -----------------------------------------------------------------------
+    // GET /api/v1/ext/tax/profiles/{profile}/tags
+    // -----------------------------------------------------------------------
+
+    public function getTags(int $profileId): JsonResponse
+    {
+        $profile = $this->repository->findProfile($profileId);
+
+        if (null === $profile) {
+            return response()->json(['message' => 'Profile not found.'], 404);
+        }
+
+        $links = $this->repository->getLinkedTags($profile);
+
+        $data = $links->map(fn ($link) => [
+            'id'  => $link->tag->id,
+            'tag' => $link->tag->tag,
+        ])->values()->toArray();
+
+        return response()->json(['data' => $data]);
+    }
+
+    // -----------------------------------------------------------------------
     // POST /api/v1/ext/tax/profiles/{profile}/tags
     // -----------------------------------------------------------------------
 
@@ -165,6 +187,47 @@ class TaxController extends Controller
                 'tag_id'         => $link->tag_id,
             ],
         ]);
+    }
+
+    // -----------------------------------------------------------------------
+    // DELETE /api/v1/ext/tax/profiles/{profile}
+    // -----------------------------------------------------------------------
+
+    public function destroy(int $profileId): JsonResponse
+    {
+        $profile = $this->repository->findProfile($profileId);
+
+        if (null === $profile) {
+            return response()->json(['message' => 'Profile not found.'], 404);
+        }
+
+        $this->repository->deleteProfile($profile);
+
+        return response()->json(null, 204);
+    }
+
+    // -----------------------------------------------------------------------
+    // DELETE /api/v1/ext/tax/profiles/{profile}/tags/{tag}
+    // -----------------------------------------------------------------------
+
+    public function unlinkTag(int $profileId, int $tagId): JsonResponse
+    {
+        $profile = $this->repository->findProfile($profileId);
+
+        if (null === $profile) {
+            return response()->json(['message' => 'Profile not found.'], 404);
+        }
+
+        /** @var Tag|null $tag */
+        $tag = auth()->user()->tags()->find($tagId);
+
+        if (null === $tag) {
+            return response()->json(['message' => 'Tag not found.'], 404);
+        }
+
+        $this->repository->unlinkTag($profile, $tag);
+
+        return response()->json(null, 204);
     }
 
     // -----------------------------------------------------------------------

@@ -192,6 +192,14 @@
                     </a>
                 </li>
 
+                <li class="nav-item @partialroute('ext.tax') menu-open @endpartialroute">
+                    <a href="{{ route('ext.tax.index') }}"
+                       class="nav-link @partialroute('ext.tax') active @endpartialroute">
+                        <i class="nav-icon fa-solid fa-file-invoice-dollar"></i>
+                        <p>{{ __('firefly.tax') }}</p>
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a href="{{ route('logout') }}" class="nav-link logout-link">
                         <i class="nav-icon fa-solid fa-arrow-right-from-bracket"></i>

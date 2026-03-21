@@ -13,6 +13,7 @@ class ExtensionsServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(base_path('database/migrations/extensions'));
         $this->loadRoutesFrom(base_path('routes/extensions-api.php'));
+        $this->loadRoutesFrom(base_path('routes/extensions-web.php'));
     }
 
     public function register(): void

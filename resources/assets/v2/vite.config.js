@@ -67,6 +67,10 @@ export default defineConfig(({command, mode, isSsrBuild, isPreview}) => {
                     'src/pages/administrations/create.js',
                     'src/pages/administrations/edit.js',
 
+                    // extensions - tax
+                    'src/pages/extensions/tax/index.js',
+                    'src/pages/extensions/tax/show.js',
+
                     // transactions
                     'src/pages/transactions/create.js',
                     'src/pages/transactions/edit.js',
