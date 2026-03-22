@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use function Safe\fclose;
 use function Safe\fopen;
 use function Safe\fputcsv;
@@ -140,7 +141,7 @@ final class TaxController extends Controller
         $journals  = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $csv       = $this->buildCsv($journals);
-        $safeName  = preg_replace('/[^A-Za-z0-9._-]/', '_', $profile->name);
+        $safeName  = Str::slug($profile->name, '_');
         $filename  = sprintf('tax-export-%s-%d.csv', $safeName, $profile->tax_year);
 
         return response($csv, 200, [

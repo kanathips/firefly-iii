@@ -30,8 +30,8 @@ return new class extends Migration {
 
         Schema::create('extension_tax_tag_links', static function (Blueprint $table): void {
             $table->id();
-            $table->unsignedInteger('tax_profile_id');
-            $table->unsignedInteger('tag_id');
+            $table->unsignedBigInteger('tax_profile_id');
+            $table->unsignedBigInteger('tag_id');
             $table->timestamps();
 
             $table->foreign('tax_profile_id')->references('id')->on('extension_tax_profiles')->onDelete('cascade');

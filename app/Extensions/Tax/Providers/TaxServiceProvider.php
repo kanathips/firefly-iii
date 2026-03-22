@@ -8,6 +8,7 @@ use FireflyIII\Extensions\Tax\Repositories\TaxRepository;
 use FireflyIII\Extensions\Tax\Repositories\TaxRepositoryInterface;
 use FireflyIII\Extensions\Tax\Services\TaxCalculationService;
 use FireflyIII\Extensions\Tax\Transformers\TaxSummaryTransformer;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -24,7 +25,6 @@ class TaxServiceProvider extends ServiceProvider
         // the current user, mirroring the pattern used by core providers like
         // TagServiceProvider.
         $this->app->bind(TaxRepositoryInterface::class, static function (Application $app): TaxRepositoryInterface {
-            /** @var TaxRepository $repository */
             return $app->make(TaxRepository::class);
         });
 
