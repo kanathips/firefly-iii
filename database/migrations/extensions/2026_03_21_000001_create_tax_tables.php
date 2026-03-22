@@ -16,7 +16,7 @@ return new class extends Migration {
     {
         Schema::create('extension_tax_profiles', static function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedInteger('user_id');
             $table->string('name', 255);
             $table->unsignedSmallInteger('tax_year');
             $table->decimal('tax_rate', 5, 2)->default(0.00);

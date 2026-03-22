@@ -25,14 +25,7 @@ class TaxServiceProvider extends ServiceProvider
         // the current user, mirroring the pattern used by core providers like
         // TagServiceProvider.
         $this->app->bind(TaxRepositoryInterface::class, static function (Application $app): TaxRepositoryInterface {
-            /** @var TaxRepository $repository */
-            $repository = $app->make(TaxRepository::class);
-
-            if ($app->auth->check()) {
-                $repository->setUser(auth()->user());
-            }
-
-            return $repository;
+            return $app->make(TaxRepository::class);
         });
 
         // Bind the calculation service (constructor-injected with the interface).
