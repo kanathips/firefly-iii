@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 # ============================================================
 # Builder stage – compile PHP extensions, build JS, install Composer deps
 # Mirrors what release.yml does: npm run prod (v1) + npm run build (v2)
@@ -26,8 +27,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
         mbstring \
         pcntl
 
-# Install Composer via official installer (avoids Docker Hub credential requirement)
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
