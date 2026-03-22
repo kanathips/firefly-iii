@@ -1,0 +1,108 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: firefly-iii-local:latest
+        hostname: app
+        container_name: firefly_iii_core
+        restart: always
+        volumes:
+            - firefly_iii_storage:/var/www/html/storage
+        env_file:
+            - ./env/firefly.env
+        networks:
+            - firefly_iii
+        expose:
+            - "8080" # Internal port, only used by tunnel and cron
+        depends_on:
+            db:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/about"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+
+    db:
+        image: mariadb:lts
+        hostname: db
+        container_name: firefly_iii_db
+        restart: always
+        env_file:
+            - ./env/database.env
+        networks:
+            - firefly_iii
+        volumes:
+            - firefly_iii_db:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+
+    redis:
+        image: redis:7-alpine
+        hostname: redis
+        container_name: firefly_iii_redis
+        restart: always
+        networks:
+            - firefly_iii
+        env_file:
+            - ./env/firefly.env
+        volumes:
+            - firefly_iii_redis:/data
+        command: redis-server --appendonly yes
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
+    cron:
+        # To make this work, STATIC_CRON_TOKEN in firefly.env must be exactly 32 characters.
+        image: alpine
+        restart: always
+        container_name: firefly_iii_cron
+        env_file:
+            - ./env/firefly.env
+        volumes:
+            - ./docker/cron.sh:/cron.sh:ro
+        command: sh /cron.sh
+        networks:
+            - firefly_iii
+        depends_on:
+            app:
+                condition: service_healthy
+
+    tunnel:
+        image: cloudflare/cloudflared:latest
+        hostname: tunnel
+        container_name: firefly_iii_tunnel
+        restart: always
+        command: tunnel --no-autoupdate --protocol http2 run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+        env_file:
+            - ./env/cloudflare.env
+        networks:
+            - firefly_iii
+        depends_on:
+            app:
+                condition: service_healthy
+        # Uncomment below if you want to configure tunnel via config file instead of token
+        # volumes:
+        #   - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
+        # command: tunnel --config /etc/cloudflared/config.yml run
+
+volumes:
+    firefly_iii_storage:
+    firefly_iii_db:
+    firefly_iii_redis:
+
+networks:
+    firefly_iii:
+        driver: bridge
