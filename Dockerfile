@@ -26,7 +26,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
         mbstring \
         pcntl
 
-# Install Composer via official installer (avoids credential-helper issues with --from=image)
+# Install Composer via official installer (avoids Docker Hub credential requirement)
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 WORKDIR /var/www/html
