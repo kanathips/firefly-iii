@@ -36,7 +36,15 @@ final class TaxController extends Controller
         private readonly TaxRepositoryInterface $repository,
         private readonly TaxCalculationService  $calculationService,
         private readonly TaxSummaryTransformer  $transformer,
-    ) {}
+    ) {
+        // Guarantee setUser() is called after the auth:api middleware has run,
+        // regardless of when the service container resolved the repository.
+        $this->middleware(function (\Illuminate\Http\Request $request, \Closure $next) {
+            $this->repository->setUser(auth()->user());
+
+            return $next($request);
+        });
+    }
 
     // -----------------------------------------------------------------------
     // POST /api/v1/ext/tax/profiles
@@ -132,7 +140,8 @@ final class TaxController extends Controller
         $journals  = $this->repository->getDeductibleJournals($profile, $start, $end);
 
         $csv       = $this->buildCsv($journals);
-        $filename  = sprintf('tax-export-%s-%d.csv', $profile->name, $profile->tax_year);
+        $safeName  = preg_replace('/[^A-Za-z0-9._-]/', '_', $profile->name);
+        $filename  = sprintf('tax-export-%s-%d.csv', $safeName, $profile->tax_year);
 
         return response($csv, 200, [
             'Content-Type'        => 'text/csv; charset=UTF-8',
