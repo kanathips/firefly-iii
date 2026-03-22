@@ -1,0 +1,30 @@
+# Secrets — never bake local env files into the image
+.env
+env/
+*.key
+
+# Git metadata
+.git
+.gitignore
+
+# Dev tooling
+.claude/
+.fastembed_cache/
+.github/
+.understand-anything/
+node_modules/
+vendor/
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# Test artifacts
+coverage.xml
+output.txt
+.phpunit.cache
+phpstan-report.txt
+
+# Frontend build inputs (built separately or via pnpm in CI)
+resources/assets/v1/node_modules/
+resources/assets/v2/node_modules/
