@@ -27,18 +27,9 @@ case "$APP_KEY" in
 esac
 
 # ── Bootstrap cache (post-autoload-dump equivalent) ───────────────────────────
-# release.yml runs composer with --no-scripts, so Illuminate's postAutoloadDump
-# (which calls package:discover) never fires during the Docker build.
-# The committed bootstrap/cache files were generated on a dev machine and may
-# list dev-only providers (Debugbar, IdeHelper…) absent in --no-dev builds.
-# Wipe them so package:discover rebuilds a clean production manifest.
-echo "Clearing stale bootstrap cache..."
-rm -f bootstrap/cache/services.php \
-      bootstrap/cache/packages.php \
-      bootstrap/cache/config.php \
-      bootstrap/cache/routes*.php \
-      bootstrap/cache/events.php
-
+# The Dockerfile already deleted stale bootstrap/cache files at build time
+# (release.yml uses --no-scripts so dev-only providers would otherwise be listed).
+# package:discover rebuilds a clean production manifest here.
 echo "Discovering packages..."
 php artisan package:discover --ansi
 
