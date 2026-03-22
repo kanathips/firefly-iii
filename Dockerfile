@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.4
 # ============================================================
 # Builder stage – compile PHP extensions, build JS, install Composer deps
 # Mirrors what release.yml does: npm run prod (v1) + npm run build (v2)
